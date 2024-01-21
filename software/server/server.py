@@ -7,13 +7,14 @@ import random
 # import numpy as np
 
 
-ser = serial.Serial('COM30',115200,timeout=5)
+ser = serial.Serial('COM4',115200,timeout=5)
 VERSION = "0.0.1"
-CALI_TIMES = 50
+CALI_TIMES = 100
 fingers_max = [100] * 10
 fingers_min = [0] * 10
 fingers_values = [0] * 10
 fingers_tasks = []
+fingers_ports = [4]
 # Init rich console
 console = Console()
 # def change_value(progress, task):
@@ -24,27 +25,27 @@ console = Console()
 def cali_max_touch_value(id):
     global fingers_max
     temp = 0
-    console.log("正在校准 " + str(id) + " 中...")
+    console.log("正在校准 ID 为 " + str(id) + " 位于端口 " + str(fingers_ports[id]) + " 的手指传感器...")
     i = 0
     while i < CALI_TIMES:
         target = ser.readline().decode()
         if "Filt" in target:
-            temp = temp + float(target.split(" ")[1].strip('\t\r\n').split("\t")[id])
+            temp = temp + float(target.split(" ")[1].strip('\t\r\n').split("\t")[fingers_ports[id]])
             i = i + 1
-            time.sleep(0.02)
+            time.sleep(0.01)
     temp = temp / CALI_TIMES
     console.log(temp)
     fingers_max[id] = temp
     console.log("校准完毕！")
 
 
-def get_value_from_serial(task_id):
+def get_value_from_serial(id):
     global fingers_values
     target = ser.readline().decode()
     if "Filt" in target:
-        touch_value = float(target.split(" ")[1].strip('\t\r\n').split("\t")[4])
-        res = touch_value - fingers_values[task_id]
-        fingers_values[task_id] = touch_value
+        touch_value = float(target.split(" ")[1].strip('\t\r\n').split("\t")[fingers_ports[id]])
+        res = touch_value - fingers_values[id]
+        fingers_values[id] = touch_value
         return res
     else:
         return 0
@@ -59,18 +60,14 @@ if __name__ == "__main__":
     with Progress() as progress:
         for i in range(1):
             cali_max_touch_value(i)
-            temp_task = progress.add_task("Finger " + str(i), total=fingers_max[i])
+            temp_task = progress.add_task("Finger " + str(i), total=fingers_max[i] * 1.05)
             fingers_tasks.append(temp_task)
 
         while(True):
-
+            # print(get_value_from_serial(4))
+            # continue
             for i in range(1):
-                # Kalman
-                # dt = 0.02
-                # F = np.array([[1, dt, 0], [0, 1, dt], [0, 0, 1]])
-                # H = np.array([1, 0, 0]).reshape(1, 3)
-                # Q = np.array([[0.05, 0.05, 0.0], [0.05, 0.05, 0.0], [0.0, 0.0, 0.0]])
-                # R = np.array([0.5]).reshape(1, 1)
+                # progress.update(fingers_tasks[i], advance=get_value_from_serial(i))
                 progress.update(fingers_tasks[i], advance=get_value_from_serial(i))
-                time.sleep(0.02)
+                # time.sleep(0.02)
         # while not progress.finished:

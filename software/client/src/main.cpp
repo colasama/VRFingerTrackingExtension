@@ -17,7 +17,7 @@ void setup() {
   
   // Default address is 0x5A, if tied to 3.3V its 0x5B
   // If tied to SDA its 0x5C and if SCL then 0x5D
-  if (!cap.begin(0x5B)) {
+  if (!cap.begin(0x5A)) {
     Serial.println("MPR121 not found, check wiring?");
     while (1);
   }
@@ -33,10 +33,11 @@ void setup() {
 void loop() {
   // Transmit data by serial
   // TODO: UDP + WiFi
-  Serial.print("\t\t\t\t\t\t\t\t\t\t\t\t\t 0x"); Serial.println(cap.touched(), HEX);
+  // Serial.print("\t\t\t\t\t\t\t\t\t\t\t\t\t 0x"); Serial.println(cap.touched(), HEX);
   Serial.print("Filt: ");
   for (uint8_t i=0; i<12; i++) {
-    Serial.print(simpleKalmanFilters[i].updateEstimate(cap.filteredData(i))); Serial.print("\t");
+    float fd = cap.filteredData(i) * cap.filteredData(i);
+    Serial.print(simpleKalmanFilters[i].updateEstimate(fd)); Serial.print("\t");
   }
   delay(10);
   Serial.println();

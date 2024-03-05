@@ -2,3 +2,5 @@
 .vscode/*
 build/
 *.exe
+
+tempCodeRunnerFile.py
